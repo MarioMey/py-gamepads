@@ -12,6 +12,10 @@ bt_gamepads.py [--gp1 input1] [--gp2 input2]
 
     --gp1: Number of input event in `/dev/input/event*` of gamepad 1. Default: 16.
     --gp2: Number of input event in `/dev/input/event*` of gamepad 2. Default: 20.
+    
+    While running:
+    q: Quit
+    r: Reconnect using bluetoothctl (you have to change devices IDs in code with yours).
 ```
 ### Example
 `python3.7 bt_gamepads.py --gp1 16 --gp2 20`
@@ -21,6 +25,8 @@ It connects gamepads using `evdev` by taking data from `/dev/input/event*`. My d
 Gamepads could be turned on before or after running code and they can be turned off and on when code is running. This is possble because there is a thread that checks every second their state.
 
 Because I use this exact python file with my project, it loads a personal `obs_api.py` file (that loads real OBS python API). If you run it, as it doesn't find it, it loads an alternative `obs_api_no_obs.py` file that doesn't load OBS API. See what's inside that file, change or remove what you want.
+
+There's a function for reconnecting devices. Sometimes a BT device doesn't connect inmediatly... or it hangs waiting to connect. This is an attempt to force to connect them. It uses `bluetoothctl` and code has my devices ID. You have to change with yours.
 
 Code includes OSC functions to send OSC messages. It needs `pythonosc`.
 
