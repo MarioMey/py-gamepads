@@ -20,6 +20,8 @@ It connects gamepads using `evdev` by taking data from `/dev/input/event*`. My d
 
 Gamepads could be turned on before or after running code and they can be turned off and on when code is running. This is possble because there is a thread that checks every second their state.
 
+Because I use this exact python file with my project, it loads a personal `obs_api.py` file (that loads real OBS python API). If you run it, as it doesn't find it, it loads an alternative `obs_api_no_obs.py` file that doesn't load OBS API. See what's inside that file, change or remove what you want.
+
 Code includes OSC functions to send OSC messages. It needs `pythonosc`.
 
 ## Modules:
