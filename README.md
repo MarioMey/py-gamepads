@@ -1,4 +1,4 @@
-# py-gamepads
+# py-gamepads 0.2
 Connect several bluetooth gamepads (like the images) via Python.
 <p>
 <img src="https://user-images.githubusercontent.com/4954109/124144597-7e90c880-da62-11eb-9a19-f3bd5ef61551.png" alt="drawing" width="200"/>
