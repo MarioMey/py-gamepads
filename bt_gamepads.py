@@ -22,8 +22,7 @@ __maintainer__ = "developer"
 __status__ = "Production"
 __version__ = "0.3"
 
-import json
-import time, argparse
+import json, time, argparse
 try:
 	from obs_api import client, consola, c2, c3, c4, c, thread
 except:
@@ -43,21 +42,14 @@ class Bt:
 	def bt_send_hat(self, dev, path, que, val):
 		client.send_message('/bt', [dev, que, val])
 		c2(f'/bt, {dev}, {path[-2:]}, {que}, {val}')
-		
 		for k,v in self.devices.items():
-			if v['path'] == path:
-				dev = k
-		
-		if val == 0:
-			self.devices[dev]['hat'] = 'c'
-		else:
-			self.devices[dev]['hat'] = que
+			if v['path'] == path: dev = k
+		if val == 0: self.devices[dev]['hat'] = 'c'
+		else:        self.devices[dev]['hat'] = que
 	
 	def bt_send(self, dev, path, que, val):
-		#region bt_send(self, path, que, val):
 		client.send_message('/bt', [dev, que, val])
 		c2(f'/bt, {dev}, {path[-2:]}, {que}, {val}')
-		#endregion
 
 	def connect(self, num):
 
@@ -81,7 +73,7 @@ class Bt:
 				break
 
 			except OSError as e:
-				# c3(f'No está conectado /dev/input/event{dev}')
+				c4(f'No ha nada conectado a /dev/input/event{dev}')
 				pass
 
 	def check_devices(self):
@@ -123,7 +115,6 @@ class Bt:
 				for k,v in self.devices.items():
 					if v['path'] == path:
 						dev = k
-
 
 				# Intenta leer en device.
 				try:
@@ -214,11 +205,6 @@ if __name__ == '__main__':
 			# Test
 			elif tecla == 't':
 				consola(f'bt.devices {bt.devices}')
-				# for n, i in enumerate(bt.devices_list):
-				# 	try:
-				# 		consola(vars(bt)[f'gamepad{n}'])
-				# 	except:
-				# 		consola(f'No encuentra {n} {i}')
 
 	except KeyboardInterrupt:
 		print(' Bye')
