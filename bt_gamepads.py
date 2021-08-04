@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """ py-gamepads
-This code is for connecting two ore more bluetooth gamepads.
+This code is for connecting two bluetooth gamepads.
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
 Foundation, either version 3 of the License, or (at your option) any later
@@ -34,26 +34,28 @@ from selectors import DefaultSelector, EVENT_READ
 
 class Bt:
 	def __init__(self):
-		self.buttons = [307, 308, 305, 304, 315, 310, 311, 312, 313]
+		self.buttons1 = [307, 308, 305, 304, 315]
+		self.buttons2 = [304, 305, 308, 307, 311, 310]
+		self.gamepads1 = ["13:57:90:05:0e:31", "13:6e:0e:07:0e:31"]
+		self.gamepads2 = ["ff:ff:c2:0a:de:b8", "ff:ff:c2:0a:60:0b"]
+
 		self.selector = DefaultSelector()
 		self.devices = dict()
 		self.bt_on = True
 
-	def bt_send_hat(self, dev, path, que, val):
+	def bt_send_hat(self, dev, path, uniq, que, val):
 		client.send_message('/bt', [dev, que, val])
 		c2(f'/bt, {dev}, {path[-2:]}, {que}, {val}')
-		for k,v in self.devices.items():
-			if v['path'] == path: dev = k
 		if val == 0: self.devices[dev]['hat'] = 'c'
 		else:        self.devices[dev]['hat'] = que
 	
-	def bt_send(self, dev, path, que, val):
+	def bt_send(self, dev, path, uniq, que, val):
 		client.send_message('/bt', [dev, que, val])
 		c2(f'/bt, {dev}, {path[-2:]}, {que}, {val}')
 
 	def connect(self, num):
-
-		for dev in range(15, 30):
+		c3(f'Bt.connect({num})', c.violeta)
+		for dev in range(14, 30):
 
 			if dev in [val['event'] for val in self.devices.values()]:
 				c4(f'dev {dev} ya está en la lista')
@@ -73,10 +75,11 @@ class Bt:
 				break
 
 			except OSError as e:
-				c4(f'No ha nada conectado a /dev/input/event{dev}')
+				# c4(f'No hay nada conectado a /dev/input/event{dev}')
 				pass
 
 	def check_devices(self):
+		c4(f'Bt.check_devices()', c.azul)
 		
 		while self.bt_on:
 			for num, val in self.devices.items():
@@ -86,7 +89,7 @@ class Bt:
 			time.sleep(1)
 
 	def input_bt(self, cantidad):#, gp1, gp2):
-		c4(f'input_bt()', c.violeta)
+		c3(f'Bt.input_bt()', c.violeta)
 
 		for num in range(cantidad):
 			self.devices[num] = {
@@ -103,7 +106,7 @@ class Bt:
 		while self.bt_on:
 			
 			# Si ninguno de los dos está cargado, ni se fija
-			if all(item == None for item in [val for val in self.devices.values()]):
+			if all(item == None for item in [val['InputDevice'] for val in self.devices.values()]):
 				c3('No está conectado ninguno')
 				time.sleep(1)
 				continue
@@ -115,6 +118,7 @@ class Bt:
 				for k,v in self.devices.items():
 					if v['path'] == path:
 						dev = k
+
 
 				# Intenta leer en device.
 				try:
@@ -140,31 +144,45 @@ class Bt:
 
 	def read_device(self, dev, path, device):
 
+		uniq = device.uniq
 		for event in device.read():
 			et, ec, ev = event.type, event.code, event.value
 			if et == ecodes.EV_ABS:
 				# Analogo
-				if ec == 1:                 self.bt_send(    dev, path, 'h', -ev)
-				if ec == 0:                 self.bt_send(    dev, path, 'v', -ev)
-				if   ec == 16 and ev == -1: self.bt_send_hat(dev, path, 't', 1)
-				elif ec == 16 and ev ==  1: self.bt_send_hat(dev, path, 'b', 1)
-				elif ec == 17 and ev == -1: self.bt_send_hat(dev, path, 'r', 1)
-				elif ec == 17 and ev ==  1: self.bt_send_hat(dev, path, 'l', 1)
-				if   ec == 1  and ev ==  0: self.bt_send_hat(dev, path, 'r', 0)
-				if   ec == 1  and ev ==  0: self.bt_send_hat(dev, path, 'l', 0)
-				if   ec == 0  and ev ==  0: self.bt_send_hat(dev, path, 't', 0)
-				if   ec == 0  and ev ==  0: self.bt_send_hat(dev, path, 'b', 0)
-				
+				# print(et, ec, ev, uniq)
+
+				# Negros envia rango int(-127, 127)
+				if uniq in self.gamepads1:
+					if ec == 1: self.bt_send(    dev, path, uniq, 'h', -ev)
+					if ec == 0: self.bt_send(    dev, path, uniq, 'v', -ev)
+					ec1, ec2, ev1, ev2, ev3 = 16, 17, -1, 0, 1
+
+				# Blancos no tienen análogo
+				elif uniq in self.gamepads2:
+					ec1, ec2, ev1, ev2, ev3 = 0, 1, 0, 1, 2
+
+				if   ec == ec1 and ev == ev1                                    : self.bt_send_hat(dev, path, uniq, 't', 1)
+				elif ec == ec1 and ev == ev2 and self.devices[dev]['hat'] == 't': self.bt_send_hat(dev, path, uniq, 't', 0)
+				elif ec == ec1 and ev == ev3                                    : self.bt_send_hat(dev, path, uniq, 'b', 1)
+				elif ec == ec1 and ev == ev2 and self.devices[dev]['hat'] == 'b': self.bt_send_hat(dev, path, uniq, 'b', 0)
+				elif ec == ec2 and ev == ev3                                    : self.bt_send_hat(dev, path, uniq, 'l', 1)
+				elif ec == ec2 and ev == ev2 and self.devices[dev]['hat'] == 'l': self.bt_send_hat(dev, path, uniq, 'l', 0)
+				elif ec == ec2 and ev == ev1                                    : self.bt_send_hat(dev, path, uniq, 'r', 1)
+				elif ec == ec2 and ev == ev2 and self.devices[dev]['hat'] == 'r': self.bt_send_hat(dev, path, uniq, 'r', 0)
+					
 			if et == ecodes.EV_KEY:
-				if   ec == self.buttons[0]: self.bt_send(dev, path,   0, ev)
-				elif ec == self.buttons[1]: self.bt_send(dev, path,   1, ev)
-				elif ec == self.buttons[2]: self.bt_send(dev, path,   2, ev)
-				elif ec == self.buttons[3]: self.bt_send(dev, path,   3, ev)
-				elif ec == self.buttons[4]: self.bt_send(dev, path,   4, ev)
-				elif ec == self.buttons[5]: self.bt_send(dev, path,   5, ev)
-				elif ec == self.buttons[6]: self.bt_send(dev, path,   6, ev)
-				elif ec == self.buttons[7]: self.bt_send(dev, path,   7, ev)
-				elif ec == self.buttons[8]: self.bt_send(dev, path,   8, ev)
+				if uniq in self.gamepads1:   buttons = self.buttons1
+				elif uniq in self.gamepads2: buttons = self.buttons2
+				
+				if   ec == buttons[0]: self.bt_send(dev, path, uniq, 0, ev)
+				elif ec == buttons[1]: self.bt_send(dev, path, uniq, 1, ev)
+				elif ec == buttons[2]: self.bt_send(dev, path, uniq, 2, ev)
+				elif ec == buttons[3]: self.bt_send(dev, path, uniq, 3, ev)
+				elif ec == buttons[4]: self.bt_send(dev, path, uniq, 4, ev)
+				elif ec == buttons[5]: self.bt_send(dev, path, uniq, 5, ev)
+				elif ec == buttons[6]: self.bt_send(dev, path, uniq, 6, ev)
+				elif ec == buttons[7]: self.bt_send(dev, path, uniq, 7, ev)
+				elif ec == buttons[8]: self.bt_send(dev, path, uniq, 8, ev)
 				
 def write_file():
 	while True:
@@ -205,6 +223,11 @@ if __name__ == '__main__':
 			# Test
 			elif tecla == 't':
 				consola(f'bt.devices {bt.devices}')
+				# for n, i in enumerate(bt.devices_list):
+				# 	try:
+				# 		consola(vars(bt)[f'gamepad{n}'])
+				# 	except:
+				# 		consola(f'No encuentra {n} {i}')
 
 	except KeyboardInterrupt:
 		print(' Bye')
